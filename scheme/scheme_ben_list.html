@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load pagination %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+ <main id="main" class="main">
+     <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card border-0 shadow">
+                    <div class="card-header bg-white page-title">
+                           <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                            <div class="row">
+                               <h2 style="font-size:20px;max-width:70% !important">{{schemename}}</h2>
+                                <div class="col-md-12">
+                                  <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'scheme.manage_scheme' %}'">Schemes</div> <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                                  <div class="fS12 topTitleColor float-start me-2">Scheme Applicant List</div>
+                               </div>
+                            </div>
+                        {% if user_profile.usertype_id == 2  %}
+                            <div class="btn-add me-0" style="">
+                                <button type="button" class="btn btn-site-primary-outline btn-add me-2" id="download" onclick="showExportData({{schemeid}})"><i class="bi bi-download me-2"></i>DOWNLOAD</button>
+                                <button type="button" class="btn btn-site-primary-outline btn-add me-2" id="import" onclick="showImportData({{schemeid}})"><i class="bi bi-upload me-2"></i>IMPORT</button>
+                            </div>
+                        {% endif %}
+                        {% if user_profile.usertype_id == 5  %}
+                            <div class="btn-add me-0">
+                                    <button type="button"  class="btn btn-site-primary-outline btn-add me-2" onclick="location.href='{% url 'beneficiary.manage_beneficiary' %}?schemeid={{schemeid|encrypt}}'"><i class="bi bi-plus me-2"></i>{% trans 'ADD_APPLICANT' %}</button>
+                            </div>
+                        {% endif %}
+
+                         {% if schemes %}
+                        <div class="btn-add me-0">
+                              <form id="searchbeneficiary_form" method="post" action="/scheme/view_scheme_beneficiary/{{schemeid|encrypt}}">{% csrf_token %}
+                                  <input type="hidden" id="page" name="page" value="1">
+                                  <input type="hidden" id="rec" name="rec" value="10">
+                                  <input type="hidden" id="schemeid" name="schemeid" value="{{ schemeid }}">
+                                      <button class="btn btn-site-primary-outline btn-add me-2" type="button"  data-bs-toggle="dropdown" aria-expanded="true">
+                                      <i class="bi bi-filter me-2"></i> {% trans 'FILTER' %}
+                                      </button>
+                                       <ul class="dropdown-menu dropdownStyle2" aria-labelledby="dropdownMenuButton1" style="width: 400px; padding: 16px; position: absolute; inset: auto auto 0px 0px; margin: 0px; transform: translate(-333px, -36px);" data-popper-placement="top-end">
+                                         <div class="row">
+                                           <div class="col-md-12 mb-3">
+                                              <div class="fS14 mb-1">Applicant Name</div>
+                                              <div><input type="text" class="form-control" id="namesearch" name="namesearch"  placeholder="Applicant Name"></div>
+                                           </div>
+                                            <div class="mt-2 d-flex justify-content-end">
+                                             <button onclick="resetSearch();" class="btn btn-primary buttonStyle2 mx-2">{% trans 'CLEAR' %}</button><button onclick="search()" class="btn btn-primary buttonStyle1">{% trans 'APPLY' %}</button>
+                                     </div>
+                                         </div>
+                                       </ul>
+                                </form>
+                              <div class="dropdown float-start">
+                               <button class="btn btn-site-primary-outline btn-add me-2" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                 <i class="bi bi-three-dots-vertical"></i>
+                               </button>
+                               <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" style="">
+                                 <li><a class="dropdown-item border-0 btn-site-primary-outline" href="#">{% trans 'EXPORT_EXCEL' %}</a></li>
+                                 <li><a class="dropdown-item border-0 btn-site-primary-outline" href="#">{% trans 'EXPORT_CSV' %}</a></li>
+                               </ul>
+                             </div>
+                        </div>
+                        {% endif %}
+                       </div>
+                    {% if schemes %}
+                    <div class="card-body position-relative">
+                        <div class="grid-container">
+                            <table class="table table-hover sortable">
+                              <thead>
+                                <tr>
+                                  <th scope="col" style="width:5%">{% trans 'S_NO' %} </th>
+                                  <th scope="col" style="width:20%">Applicant</th>
+                                  <th scope="col" style="width:15%">UDID/AADHAR</th>
+                                  <th scope="col" style="width:20%">Disabilitiy</th>
+<!--                                  <th scope="col" style="width:10%">Bank Details</th>-->
+                                  <th scope="col" style="width:10%">Mg Type </th>
+                                  <th scope="col" style="width:10%">Status </th>
+                                    {% if user_profile.usertype_id == 5  %}
+                                         <th scope="col" style="width:10%">Action </th>
+                                    {% endif   %}
+                                    {% if user_profile.usertype_id == 5  %}
+                                        <th scope="col" style="width:10%"> QUOTA </th>
+                                    {% endif   %}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                  {% if schemes %}
+                                  {% for s in schemes %}
+                                    <tr>
+                                        <td>{{ forloop.counter0|add:schemes.start_index }}</td>
+                                        <td>{{ s.beneficiaryname }}<br> {{ s.dateofbirth |date:'d-m-Y' }} | {{ s.gendername }} </td>
+                                        <td>{{ s.udidno }}<br>{{ s.aadharno }}</td>
+                                        <td>{{ s.disablityname}}<br> {{ s.disabilitytpercent }}</td>
+<!--                                        <td>{{ s.bankaccountno}}<br> {{ s.bankifsccode }}</td>-->
+                                        <td>{{ s.mgtypename}} </td>
+                                        <td>{{ s.statusname}} </td>
+                                        {% if user_profile.usertype_id == 5  %}
+                                            <td>
+                                                {% if s.status_id != 57  %}
+                                                    <a href="{% url 'scheme.edit_schemeapplication' s.id  schemeid  s.disabilityid %}" class="edit-btn"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-bs-original-title="Edit "><img src="{% static 'assets/img/edit.svg' %}" class="img-fluid"></a>
+                                                    <a href="{% url 'scheme.migrate_schemeapplication' s.id  schemeid  %}" class="edit-btn"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-bs-original-title="Migrate Applicant"><img src="{% static 'assets/img/vuesax-bulk-profile-2user.svg' %}" class="img-fluid"></a>
+                                                {% endif %}
+                                             </td>
+                                        {% endif   %}
+                                        {% if user_profile.usertype_id == 5  %}
+                                        <td>
+                                            {% if s.status_id == 56  or s.status_id == 57 and  s.isquotaallotted == 1 or  s.status_id == 58 and  s.isquotaallotted == 1%}
+                                              <a href="{% url 'scheme.allot_applicant_quota' s.id  schemeid %}" class="edit-btn"
+                                                 data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-bs-original-title="Allot Quota"><img src="{% static 'assets/img/edit.svg' %}" class="img-fluid"></a>
+
+                                            {% endif %}
+                                        </td>
+                                         {% endif   %}
+
+                                    </tr>
+                                  {% endfor %}
+                                         {% else %}
+                                        <tr><td class="text-center" colspan="6" >{% trans 'NO_MATCHING_RECORD.' %}</td></tr>
+                                  {% endif %}
+                              </tbody>
+                            </table>
+                            <div class="sort-table">
+                                  <label class="form-label d-flex align-items-center">
+                                  {% trans 'SHOWING' %} <select class="form-select mx-3" id="noofrecords" name="noofrecords" onchange="search()">
+                                  <option value="5" {% if "5" == current_rec %}selected{% endif %}>5</option>
+                                  <option value="10" {% if "10" == current_rec %}selected{% endif %}>10</option>
+                                  <option value="25" {% if "25" == current_rec %}selected{% endif %} >25</option>
+                                  <option value="50" {% if "50" == current_rec %}selected{% endif %} >50</option>
+                                  <option value="100" {% if "100" == current_rec %}selected{% endif %}>100</option>
+
+                                  </select>
+                                  {% trans 'ITEMS' %}
+                                  </label>
+                                  <nav aria-label="Page navigation example" class="ms-auto">
+                                                  <ul class="pagination">
+                                                        {% if schemes.has_previous %}
+                                                            <li class="page-item">
+                                                                <a class="page-link" href="javascript:search({{schemes.previous_page_number}})" title="Previous" aria-label="Previous">
+                                                                    <span aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                        {% for i in schemes|get_range %}
+                                                            <li class="page-item"><a {% if current_page == i %} class="page-link active" {% else %} class="page-link" {% endif %} href="javascript:search({{i}})">{{i}}</a></li>
+                                                        {% endfor %}
+                                                        {% if schemes.has_next %}
+                                                            <li class="page-item">
+                                                                <a class="page-link" href="javascript:search({{schemes.next_page_number}})" aria-label="Next">
+                                                                    <span aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                  </ul>
+                                          </nav>
+                                  </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card-body">
+                        <div class="empty-list p-5">
+                            <img src="{% static 'assets/img/empty_illustration.png' %}" class="img-fluid" />
+                            <p class="empty-content mt-4">No Records Found</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+             </div>
+       </div>
+     </div>
+ </main>
+<div class="modal" id="downloadDoc" tabindex="-1" >
+  <div class="modal-dialog modal-dialog-msg">
+    <div class="modal-content modal-content-msg modalRadius modalBorderNone">
+      <div class="modal-header modalTitleBg">
+        <h5 class="modal-title modalTitleFS">Download Data</h5>
+        <button type="button" class="close modalColIc" data-dismiss="modal" aria-label="Close"  onclick="closeExportData()">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body modal-body-msg py-3">
+          <form id="formexport" method="post" action="" onsubmit="return false">{% csrf_token %}
+            <div class="col-md-12 mb-3">
+                 <input name="exportschemeid" id="exportschemeid" type="hidden" value="0" >
+                   <div class="fS14 mb-1">Scheme Name <span class="modalMandatory">*</span></div>
+                   <div>
+                        {{schemename}}
+                   </div>
+              </div>
+          </form>
+      </div>
+      <div class="modal-footer text-center p-0 m-0" style="display:block; margin: 0;">
+       <div class="row g-0" style="margin:0;">
+         <div class="col-md-6">
+           <div class="modalLftBut" data-dismiss="modal"  onclick="closeExportData()">
+             Cancel
+           </div>
+         </div>
+         <div class="col-md-6">
+           <div class="modalRhtBut" onclick="downloadData({{schemeid}})">
+             Download
+           </div>
+         </div>
+       </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="importDocDlg" tabindex="-1" >
+  <div class="modal-dialog modal-dialog-msg">
+    <div class="modal-content modal-content-msg modalRadius modalBorderNone">
+      <div class="modal-header modalTitleBg">
+        <h5 class="modal-title modalTitleFS">Import Data</h5>
+        <button type="button" class="close modalColIc" data-dismiss="modal" aria-label="Close"  onclick="closeImportData()">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body modal-body-msg py-3">
+          <form id="formimport" method="post" action="" onsubmit="return false">{% csrf_token %}
+            <div class="col-md-12 mb-3">
+                   <div class="fS14 mb-1">Scheme Name <span class="modalMandatory">*</span></div>
+                   <input name="importschemeid" id="importschemeid" type="hidden" value="{{ schemeid }}" >
+                   <div>
+                    {{schemename}}
+                   </div>
+              </div>
+         <p class="fS14 text-left p-0 m-0 mb-1">Import Data <span class="modalMandatory">*</span></p>
+         <div class="fS14 text-cente" style=" margin-bottom: 20px">
+             <input class="form-control imagefilesize" type="file" id="importdocument" name="importdocument" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></div>
+          </form>
+      </div>
+      <div class="modal-footer text-center p-0 m-0" style="display:block; margin: 0;">
+       <div class="row g-0" style="margin:0;">
+         <div class="col-md-6">
+           <div class="modalLftBut" data-dismiss="modal"  onclick="closeImportData()">
+             Cancel
+           </div>
+         </div>
+         <div class="col-md-6">
+           <div class="modalRhtBut" onclick="saveImportDocument()">
+             Submit
+           </div>
+         </div>
+       </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block pagescripts %}
+ <script>
+    function search(page) {
+
+    if(page){
+        $("#page").val(page)
+    }
+    else{
+        $("#page").val(1)
+    }
+        $("#rec").val($("#noofrecords").val())
+        $('#searchbeneficiary_form').submit();
+    }
+
+        function resetSearch()
+    {
+       $('#namesearch').val('');
+       $('#searchsupplier_form').submit();
+    }
+    function showExportData(id)
+    {
+        $("#importschemeid").val(id);
+        $("#downloadDoc").modal("show");
+    }
+    function closeExportData()
+    {
+        $("#downloadDoc").modal("hide");
+    }
+    function showImportData(id)
+    {
+        $("#importschemeid").val(id);
+        $("#importDocDlg").modal("show");
+    }
+
+
+    function closeImportData()
+    {
+         $("#importDocDlg").modal("hide");
+    }
+
+ function downloadData(id){
+        window.open("/scheme/export_scheme_data_excel/{{schemeid}}",'_blank')
+ }
+ function saveImportDocument(){
+   var data = new FormData($('#formimport')[0]);
+    $.ajax({
+        url: "/beneficiary/beneficiary_import/",
+        type: "POST",
+        data: data,
+        processData: false,
+        contentType:false,
+        success: function(response) {
+            if(response.message.result){
+                window.location.href="/scheme/view_import_data/"+response.message.importid;
+            }else{
+<!--                showMsg(response.message.text,true);-->
+                showAlert(response.message.text,'D',false);
+            }
+        }
+    });
+}
+</script>
+{% endblock pagescripts %}

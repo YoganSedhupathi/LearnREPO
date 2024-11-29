@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load pagination %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+
+ <main id="main" class="main">
+     <div class="container-fluid">
+        <div class="row">
+           <div class="col-md-12">
+               <div class="card border-0 shadow">
+                    <div class="card-header bg-white page-title">
+                         <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                            <div class="row">
+                               <h2 style="font-size:20px;word-break: break-all;">{% trans 'SCHEME_DETAILS' %}</h2>
+                                <div class="col-md-12">
+                                  <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'common.submenus' %}?parentid={{57|encrypt}}'">{% trans 'SCHEMES' %}</div>
+                                    <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                                  <div class="fS12 topTitleColor float-start me-2">{% trans 'SCHEME_DETAILS' %}</div>
+                               </div>
+                            </div>
+                <div class="btn-add me-0">
+                             {% if roles.canadd %}
+                                <button type="button"  onclick="location.href='{% url 'scheme.create_scheme' 0|encrypt 0|encrypt %}'" class="btn btn-site-primary-outline btn-add me-2" id="addscheme"><i class="bi bi-plus me-2"></i>{% trans 'ADD_SCHEME' %}</button>
+                             {% endif %}
+                                <form id="export_forms" method="post" action="/scheme/export_documents/">{% csrf_token %}
+                                      <input type="hidden" name ="eaction" id="eaction" value=""/>
+                                      <input type="hidden" name ="eschemecategoryid" id="eschemecategoryid" value=""/>
+                                     <div class="dropdown float-start">
+                                         <button type="button" class="btn btn-site-primary-outline btn-add" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></button>
+                                       <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" style="">
+                                         <li><a class="dropdown-item" onclick="exportReport('scheme_export_excel')" href="#">{% trans 'EXPORT_EXCEL' %}</a></li>
+                                         <li><a class="dropdown-item" onclick="exportReport('scheme_export_csv')" href="#">{% trans 'EXPORT_CSV' %}</a></li>
+                                       </ul>
+                                     </div>
+                                </form>
+                    </div>
+                          </div>
+                    {% if schemes %}
+                    <div class="card-body position-relative">
+                     <form id="student_details_form" method="post" action=".">{% csrf_token %}
+                                  <input type="hidden" id="page" name="page" value="1">
+                                  <input type="hidden" id="rec" name="rec" value="10">
+                                    <div class="row mt-4" style="display:none">
+                                        <div class="col-md-3">
+                                                {% trans 'SELECT_SCHEME_CAT' %}
+                                        </div>
+                                            <div class="col-md-3"  >
+                                             <select class="form-select rounded-0" name="schemecategoryid" id="schemecategoryid" onchange="search()">
+                                                <option value="" >-{% trans 'SELECT' %}-</option>
+                                                {% for bl in schemecategory %}
+                                                    <option svalue="{{bl.id}}" {% if schemecategoryid == bl.id %}selected{% endif %}>{% ifequal LANGUAGE_CODE 'ta' %} {{ bl.schemecategorylocal }} {% else %} {{ bl.schemecategoryname }} {% endifequal %}</option>
+                                                {% endfor %}
+                                            </select>
+                                             </div>
+                                        </div>
+                                    <div class="grid-container">
+
+                                     <div class="row mt-4">
+                                        {% for s in schemes %}
+                                     <div class="col-md-3 mb-4">
+                                        <div class="card">
+                                          <div class="card-body" style="max-height: 125px !important;min-height: 125px !important;">
+                                            <h6 class="card-title">{% ifequal LANGUAGE_CODE 'ta' %} {{ s.schemecategory.schemecategorylocal }} {% else %} {{ s.schemecategory.schemecategoryname }} {% endifequal %}</h6>
+                                            <p class="card-text fS12 topTitleColor breadCrumbHighLight" style="white-space: nowrap;width: 200px;overflow: hidden;text-overflow: ellipsis;">{% ifequal LANGUAGE_CODE 'ta' %} {{ s.schemenamelocal}} {% else %} {{ s.schemename}} {% endifequal %}</p>
+                                          </div>
+                                          <ul class="list-group list-group-flush">
+                                              <li class="list-group-item"><span>{% trans 'AGE_LIMIT' %} </span><span class="labelStyle1 float-end">{{ s.agefrom }} to {{ s.ageto }} {% trans 'AGE' %}</span></li>
+                                            <li class="list-group-item"><span>{% trans 'GENDER' %}</span><span class="labelStyle2 float-end">{% if 1 == s.applicableformale %}{% trans 'MALE' %}{% endif %}{% if 1 == s.applicableforfemale %} {% trans 'FEMALE' %}{% endif %}{% if 1 == s.applicablefortransgender %} {% trans 'TRANSGENDER' %}{% endif %}{% if 1 == s.allgender %}{% trans 'ALL_GENDER' %}{% endif %}</span></li>
+                                          </ul>
+                                          <div class="card-footer" style="text-align:center">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Basic outlined example">
+                                                   {% if user_profile.usertype_id == 5  %}
+                                                        <button type="button" class="btn btn-outline-primary" onclick="location.href='{% url 'scheme.view_scheme_beneficiary' s.id|encrypt %}'">{% trans 'VIEW' %}</button>
+                                                    {% elif user_profile.usertype_id == 2 %}
+                                                        <button type="button" class="btn btn-outline-primary" onclick="location.href='{% url 'scheme.create_scheme' s.id|encrypt 1|encrypt %}'">{% trans 'EDIT' %}</button>
+                                                        <button type="button" class="btn btn-outline-primary" onclick="location.href='{% url 'scheme.create_scheme' s.id|encrypt 2|encrypt %}'">{% trans 'VIEW' %}</button>
+
+                                                         <button type="button" class="btn btn-outline-primary" onclick="location.href='{% url 'scheme.view_scheme_beneficiary' s.id|encrypt %}'">{% trans 'IMPORT' %}</button>
+                                                    {% endif %}
+                                                </div>
+                                          </div>
+                                        </div>
+                                    </div>
+                                        {% endfor %}
+                                         </div>
+                                    </div>
+                     </form>
+                    </div>
+                    {% else %}
+                    <div class="card-body">
+                        <div class="empty-list p-5">
+                            <img src="{% static 'assets/img/empty_illustration.png' %}" class="img-fluid" />
+                            <p class="empty-content mt-4">{% trans 'TABLE_EMPTY_TEXT' %}</p>
+                            {% if roles.canadd %}
+                            <button type="button" onclick="location.href='{% url 'scheme.create_scheme' 0 1 %}'" class="btn btn-site-primary-outline btn-add" id="addStudents"><i class="bi bi-plus me-2"></i>{% trans 'ADD_SCHEME' %}</button>
+                             {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+               </div>
+           </div>
+        </div>
+    </div>
+ </main>
+
+
+{% endblock %}
+
+{% block pagescripts %}
+  <script>
+   function search(page) {
+        if(page){
+            $("#page").val(page)
+        }
+        else{
+            $("#page").val(1)
+        }
+        $("#rec").val($("#noofrecords").val())
+        $('#student_details_form').submit();
+    }
+
+function exportReport(rpt)
+     {
+        $('#eaction').val(rpt);
+        $('#eschemecategoryid').val($('#schemecategoryid').val());
+        $('#export_forms').submit();
+     }
+
+    </script>
+{% endblock pagescripts %}

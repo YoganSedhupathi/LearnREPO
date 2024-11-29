@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+<style>
+    #constituencylocal{
+      pointer-events: none;
+      touch-action: none;
+    }
+</style>
+ <main id="main" class="main">
+     <div class="container-fluid">
+        <div class="row">
+           <div class="col-md-12">
+               <div class="card border-0 shadow">
+                   <div class="card-header bg-white page-title">
+                      <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                                <div class="row">
+                                   <h2 style="font-size:25px">{% if is_view_user %}{% trans 'VIEW_MIGRATION' %} {% elif user_data %} {% trans 'EDIT_MIGRATION' %} {% else %}{% trans 'UPDATE_MIGRATION' %} {% endif %}</h2>
+                                    <div class="col-md-12">
+                                      <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'master.manage_area_list' %}'"> {% trans 'SCHEME_APPLICANT_LIST' %}</div> <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                                      <div class="fS12 topTitleColor float-start me-2">{% if is_view_user %}{% trans 'VIEW_MIGRATION' %} {% elif user_data %} {% trans 'EDIT_MIGRATION' %} {% else %}{% trans 'UPDATE_MIGRATION' %} {% endif %}</div>
+                                   </div>
+                                </div>
+                         </div>
+                   <div class="card-body position-relative">
+                               <form class="m-form" method="POST" id='allot_mgquota_form' action="" enctype="multipart/form-data">{% csrf_token %}
+                                 <input type="hidden" id="schemeid" name="schemeid" value="{{ schemeid }}">
+                                 <div class="">
+                                    <div class="row">
+                                       <div class="col-md-12">
+                                           <div class="containerBorderBox mb-1">
+                                               <div class="col-md-12">
+                                                    <div class="row mt-4">
+                                                            <div class="col-md-3 mb-3">
+                                                               <div class="fS14 mb-1">{% trans 'ALLOT_QUOTA' %}<span class="modalMandatory">*</span></div>
+                                                                    <label class="custom-toggle">
+                                                                         <input id="is_quotaallot" name="is_quotaallot" type="checkbox" value="1" {% if user_data.is_quotaallot == 1 %} checked {% endif %}>
+                                                                         <span class="custom-toggle-slider rounded-circle" data-label-off="{% trans 'NO' %}" data-label-on="{% trans 'YES' %}" ></span>
+                                                                    </label>
+                                                            </div>
+
+                                                   </div>
+                                               </div>
+                                           </div>
+                                       </div>
+                                    </div>
+                                </div>
+                                   <div class="row mt-2">
+                                        <div class="mb-3 d-flex justify-content-end">
+                                            <button type="button" class="btn btn-site-secondary me-4 popup-close"  >{% trans 'CLOSE' %}</button>
+                                            {% if not is_view_user %}
+                                            <button type="button" onclick="SaveMg()" class="btn btn-site-primary">{% trans 'SAVE' %}</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                               </form>
+                    </div>
+               </div>
+           </div>
+        </div>
+    </div>
+ </main>
+{% endblock %}
+
+{% block pagescripts %}
+<script>
+
+
+
+
+
+var MgValidationRules = function () {
+    var mg_form_validate = function () {
+       if($("#manage_mgschemestatus_form").length){
+             $("#manage_mgschemestatus_form").validate({
+                    rules: {
+                      mgstatus : {
+                        required: true,
+                      },
+                      mgtype : {
+                        required: true,
+                      }
+                    },
+
+                     errorPlacement: function (error, element) {
+                    error.insertAfter(element.closest('div'));
+            },
+                //display error alert on form submit
+            invalidHandler: function(event, validator) {
+                return false;
+            },
+            submitHandler: function (form) {
+                    var data = new FormData(form);
+                    $.ajax({
+                        url: form.action,
+                        type: form.method,
+                        data: data,
+                        processData: false,
+                        contentType:false,
+                        success: function(response) {
+                            if(response.message.type=="alert-success"){
+                                 showAlert(response.message.text,'S','/master/manage_area_list/');
+                            }
+                            else{
+                               showAlert(response.message.text,'D',false);
+                            }
+                        }
+                    });
+                }
+           });
+       }
+     }
+        return {
+            init: function() {
+                mg_form_validate();
+            }
+        };
+}();
+
+function SaveMg(){
+    $("#manage_mgschemestatus_form").submit();
+}
+
+$(document).ready(function(e) {
+  if($( "#manage_mgschemestatus_form" ).length){
+          MgValidationRules.init();
+  }
+  });
+
+</script>
+{% endblock pagescripts %}

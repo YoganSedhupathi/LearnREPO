@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load pagination %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+ <main id="main" class="main">
+     <div class="container-fluid">
+         <div class="row">
+   <div class="col-md-12">
+       <div class="card border-0 shadow">
+      <div class="card-header bg-white page-title">
+      <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                <div class="row">
+                   <h2 style="font-size:25px">{% trans 'MG_ALLOTMENT_LIST' %}</h2>
+                    <div class="col-md-12">
+                      <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'common.submenus' %}?parentid={{56|encrypt}}'">{% trans 'ASSISTIVE_DEVICE' %}</div>
+                        <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                      <div class="fS12 topTitleColor float-start me-2">{% trans 'MG_ALLOTMENT_LIST' %}</div>
+                   </div>
+                </div>
+      <div class="btn-add me-0">
+        {% if user_type == 2 %}
+         <button type="button" class="btn btn-site-primary-outline btn-add me-2" onclick="location.href='{%url 'scheme.create_mgquota' %}?quotaid={{0|encrypt}}'">
+           <i class="bi bi-plus me-2"></i> {% trans 'ADD_ALLOTMENT' %}</button>
+          {% endif %}
+
+           <div class="dropdown float-start">
+            <form id="searchquota_form" method="post" action=".">{% csrf_token %}
+              <input type="hidden" id="page" name="page" value="1">
+              <input type="hidden" id="rec" name="rec" value="5">
+                          <button class="btn btn-site-primary-outline btn-add me-2" type="button"  data-bs-toggle="dropdown" aria-expanded="true">
+                          <i class="bi bi-filter me-2"></i> {% trans 'FILTER' %}
+                       </button>
+                   <ul class="dropdown-menu dropdownStyle2" aria-labelledby="dropdownMenuButton1" style="width: 400px; padding: 16px; position: absolute; inset: auto auto 0px 0px; margin: 0px; transform: translate(-333px, -36px);" data-popper-placement="top-end">
+                     <div class="row">
+                         <div class="col-md-6 mb-3">
+                          <div class="fS14 mb-1">{% trans 'FROM_DATE' %}</div>
+                          <div><input type="date" class="form-control" id="fromdate" name="fromdate" placeholder="{% trans 'FROM_DATE' %}" value="{{fromdate}}"></div>
+                       </div>
+
+                       <div class="col-md-6 mb-3">
+                        <div class="fS14 mb-1">{% trans 'TO_DATE' %}</div>
+                          <div><input type="date" class="form-control" id="todate"  name="todate" placeholder="{% trans 'TO_DATE' %}" value="{{todate}}"></div>
+                       </div>
+
+                       <div class="col-md-12 mb-3">
+                          <div class="fS14 mb-1">{% trans 'ALLOTMENT_NAME' %}</div>
+                          <div><input type="text" class="form-control" id="namesearch" name="namesearch"  placeholder="{% trans 'ALLOTMENT_NAME' %}" value="{{namesearch}}"></div>
+                       </div>
+
+                       <div class="col-md-12 mb-3">
+                          <div class="fS14 mb-1">{% trans 'MGTYPE_NAME' %}</div>
+                          <div><select class="form-select" id="mgtypesearch"
+                                                        name="mgtypesearch"
+                                                        data-toggle="m-tooltip" title=""
+                                                        data-original-title="Select Mg Type">
+                                                        <option value="0">-{% trans 'SELECT' %}-</option>
+                                                        {% for prd in mgtypes %}
+                                                            <option value="{{prd.id}}" {% if mgtypesearch|integer == prd.id %}selected{% endif %}>{% ifequal LANGUAGE_CODE 'ta' %} {{prd.mgtypenamelocal}} {% else %} {{prd.mgtypename}} {% endifequal %}</option>
+                                                        {% endfor %}</select>
+                          </div>
+                       </div>
+
+                        <div class="mt-2 d-flex justify-content-end">
+                         <button onclick="resetSearch();" class="btn btn-primary buttonStyle2 mx-2">{% trans 'CLEAR' %}</button><button onclick="search()" class="btn btn-primary buttonStyle1">{% trans 'APPLY' %}</button>
+                 </div>
+                     </div>
+                   </ul>
+            </form>
+         </div>
+
+           <form id="export_forms" method="post" action="/quota/export_reports/">{% csrf_token %}
+                  <input type="hidden" name ="eaction" id="eaction" value=""/>
+                  <input type="hidden" name ="efromdate" id="efromdate" value=""/>
+                  <input type="hidden" name ="etodate" id="etodate" value=""/>
+                  <input type="hidden" name ="enamesearch" id="enamesearch" value=""/>
+                  <input type="hidden" name ="emgtypesearch" id="emgtypesearch" value=""/>
+                  <div class="dropdown float-start">
+                     <button type="button" class="btn btn-site-primary-outline btn-add" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></button>
+                   <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" style="">
+                     <li><a class="dropdown-item" onclick="exportReport('quota_list_export_excel')" href="#">{% trans 'EXPORT_EXCEL' %}</a></li>
+                     <li><a class="dropdown-item" onclick="exportReport('quota_list_export_csv')" href="#">{% trans 'EXPORT_CSV' %}</a></li>
+                   </ul>
+                  </div>
+           </form>
+      </div>
+      <div class="clearfix"></div>
+   </div>
+
+  <div class="card-body position-relative">
+  <div class="grid-container">
+
+
+    <table class="table table-hover sortable">
+  <thead>
+    <tr>
+        {% if user_type == 2 %}
+      <th scope="col" class="td10">{% trans 'S_NO' %}</th>
+      <th scope="col">{% trans 'ALLOTMENT_DTLS' %} </th>
+      <th scope="col" class="td15">{% trans 'PERIOD' %} </th>
+      <th scope="col" class="td10">{% trans 'ALLOTTED' %} </th>
+      <th scope="col" class="td10">{% trans 'USED' %}</th>
+      <th scope="col" class="td20">{% trans 'ACTION' %}</th>
+        {% else %}
+      <th scope="col" class="td10">{% trans 'S_NO' %}</th>
+      <th scope="col">{% trans 'ALLOTMENT_DTLS' %} </th>
+      <th scope="col" class="td15">{% trans 'PERIOD' %} </th>
+      <th scope="col" class="td10">{% trans 'ALLOTTED' %} </th>
+      <th scope="col" class="td10">{% trans 'USED' %}</th>
+        <th scope="col" class="td10">{% trans 'BALANCE' %}</th>
+        {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% if quotas %}
+  {% for quota in quotas %}
+    <tr>
+      <td>{{forloop.counter0|add:quotas.start_index  }}</td>
+        {% if user_type == 2 %}
+        <td><b>{% ifequal LANGUAGE_CODE 'ta' %} {{ quota.mgtypenamelocal }} {% else %} {{ quota.mgtypename }} {% endifequal %}</b><br><i>{{ quota.quotadescription }}</i></td>
+        <td>{{ quota.fromdate|date:'d-m-Y' }}<br>{{ quota.todate|date:'d-m-Y' }}</td>
+        <td>{{ quota.allotedqty }}</td>
+        <td>{{ quota.usedqty }}</td>
+       <td>
+            <a href="{% url 'scheme.view_mgquota' quota.id|encrypt %}" class="view-btn mb-2 mb-sm-0"><img src="{% static 'assets/img/eye.svg' %}" class="img-fluid"></a>
+            <a href="{% url 'scheme.create_mgquota' %}?quotaid={{quota.id|encrypt}}" class="edit-btn"><img src="{% static 'assets/img/edit.svg' %}" class="img-fluid"></a>
+           {% if quota.allotedqty > quota.usedqty %}
+                <a href="#"  onclick="processMgQuota({{quota.id|encrypt}})" class="edit-btn"><img src="{% static 'assets/img/process.png' %}" style="height:18px;filter: brightness(0.5);" class="img-fluid"></a>
+            {% endif %}
+       </td>
+        {% else %}
+        <td><b>{% ifequal LANGUAGE_CODE 'ta' %} {{ quota.mgtypenamelocal }} {% else %} {{ quota.mgtypename }} {% endifequal %}</b><br><i>{{ quota.quotadescription }}</i></td>
+        <td>{{ quota.fromdate|date:'d-m-Y' }}<br>{{ quota.todate|date:'d-m-Y' }}</td>
+        <td>{{ quota.allotedqty }}</td>
+
+        <td>{{ quota.usedqty }}</td>
+        <td>{{ quota.balanceqty }}</td>
+        {% endif %}
+    </tr>
+  {% endfor %}
+         {% else %}
+        <tr><td class="text-center" colspan="6" >{% trans 'NO_MATCHING_RECORD.' %}</td></tr>
+  {% endif %}
+  </tbody>
+</table>
+
+
+  <div class="sort-table">
+      <label class="form-label d-flex align-items-center">
+      {% trans 'SHOWING' %} <select class="form-select mx-3" id="noofrecords" name="noofrecords" onchange="search()">
+      <option value="5" {% if "5" == current_rec %}selected{% endif %}>5</option>
+      <option value="10" {% if "10" == current_rec %}selected{% endif %}>10</option>
+      <option value="25" {% if "25" == current_rec %}selected{% endif %} >25</option>
+      <option value="50" {% if "50" == current_rec %}selected{% endif %} >50</option>
+      <option value="100" {% if "100" == current_rec %}selected{% endif %}>100</option>
+      </select>
+      {% trans 'ITEMS' %}
+      </label>
+      <nav aria-label="Page navigation example" class="ms-auto">
+          <ul class="pagination">
+                {% if quotas.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="javascript:search({{quotas.previous_page_number}})" title="Previous" aria-label="Previous">
+                            <span aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% for i in quotas|get_range %}
+                    <li class="page-item"><a {% if current_page == i %} class="page-link active" {% else %} class="page-link" {% endif %} href="javascript:search({{i}})">{{i}}</a></li>
+                {% endfor %}
+                {% if quotas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="javascript:search({{quotas.next_page_number}})" aria-label="Next">
+                            <span aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                        </a>
+                    </li>
+                {% endif %}
+          </ul>
+        </nav>
+      </div>
+</div>
+</div>
+</div>
+         </div>
+       </div>
+     </div>
+ </main>
+{% endblock %}
+
+{% block pagescripts %}
+ <script>
+  function search(page) {
+    if(page){
+        $("#page").val(page)
+    }
+    else{
+        $("#page").val(1)
+    }
+    $("#rec").val($("#noofrecords").val())
+    $('#searchquota_form').submit();
+  }
+
+    function resetSearch()
+    {
+       $('#fromdate').val(0);
+       $('#todate').val(0);
+       $('#namesearch').val('');
+       $('#mgtypesearch').val(0);
+       $('#searchquota_form').submit();
+    }
+
+    function processMgQuota(id)
+    {
+    alert("MG PROCESS");
+        $.ajax({
+            url: '/scheme/process_mgquota_allocation/'+id,
+            type: 'GET',
+            success: function(response) {
+                if(response.message.type=="alert-success"){
+                       showAlert(response.message.text,'S',false);
+                       window.location.reload();
+                   }else{
+                       showAlert(response.message.text,'D',false);
+                   }
+            }
+        });
+    }
+
+        function exportReport(rpt)
+    {
+        $('#eaction').val(rpt);
+        $('#efromdate').val($('#fromdate').val());
+        $('#etodate').val($('#todate').val());
+        $('#enamesearch').val($('#namesearch').val());
+        $('#emgtypesearch').val($('#mgtypesearch').val());
+        $('#export_forms').submit();
+    }
+</script>
+{% endblock pagescripts %}

@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content%}
+<main id="main" class="main">
+     <div class="container-fluid">
+         <div class="row">
+       <div class="card border-0 shadow">
+           <div class="card-header bg-white page-title">
+                      <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                                <div class="row">
+                                   <h2 style="font-size:25px">{% if is_view_user %}{% trans 'VIEW_MG_ALLOTMENT' %} {% elif quota %} {% trans 'EDIT_MG_ALLOTMENT' %} {% else%} {% trans 'CREATE_MG_ALLOTMENT' %}{% endif %}</h2>
+                                    <div class="col-md-12">
+                                      <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'scheme.manage_mgallotement' %}'">{% trans 'MG_ALLOTMENT_LIST' %}</div>
+                                        <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                                      <div class="fS12 topTitleColor float-start me-2">{% if is_view_user %}{% trans 'VIEW_MG_ALLOTMENT' %} {% elif quota %}{% trans 'EDIT_MG_ALLOTMENT' %}{% else%} {% trans 'CREATE_MG_ALLOTMENT' %}{% endif %}</div>
+                                   </div>
+                                </div>
+                         </div>
+                           <div class="card-body position-relative">
+                                <form class="m-form" method="POST" id='create-mgquota-form' action="" enctype="multipart/form-data">{% csrf_token %}
+                             <div class="">
+                               <div class="card-header bg-white">
+
+                                  <div class="row mt-4">
+                                   <div class="col-md-6 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'ALLOTMENT_DESC' %} <span class="modalMandatory">*</span></div>
+                                       <div><input id="quotadescription" name="quotadescription" required autocomplete="off" maxlength="100" type="text" onkeypress="return ValidateAlpha(event);" class="form-control"  placeholder="{% trans 'ALLOTMENT_DESC' %}"  value="{{quota.quotadescription}}" {% if is_view_user %} disabled {% endif %}>
+                                       <input id="quotaid"  name="quotaid" type="hidden" class="form-control" placeholder="quotaid" value="{{quota.id}}"></div>
+                                   </div>
+
+                                      <div class="col-md-6 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'MGTYPE_NAME' %} <span class="modalMandatory">*</span></div>
+                                       <div>
+                                            <select class="form-select m-input group" id="mgtype"
+                                                name="mgtype" required {% if is_view_user %} disabled {% endif %}>
+                                                <option name="select" value="" selected>-{% trans 'SELECT' %}-</option>
+                                                {% for mgtype in mgtypes %}
+                                                    <option value="{{mgtype.id}}" {% if quota.mgschemetype_id == mgtype.id %} selected {% endif %}>{% ifequal LANGUAGE_CODE 'ta' %} {{mgtype.mgtypenamelocal}} {% else %} {{mgtype.mgtypename}} {% endifequal %}</option>
+                                                {% endfor %}
+                                            </select>
+                                       </div>
+                                   </div>
+                                 </div>
+                                  <div class="row mt-4">
+                                   <div class="col-md-3 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'FROM_DATE' %} <span class="modalMandatory">*</span></div>
+                                       <div>
+                                           <input  id="fromdate" onchange="quotaToDate(this);"  name="fromdate"  type="date" class="form-control"  required placeholder="{% trans 'FROM_DATE' %}" value="{{quota.fromdate|date:'Y-m-d'}}" {% if is_view_user %} disabled {% endif %}></div>
+                                   </div>
+                                   <div class="col-md-3 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'TO_DATE' %} <span class="modalMandatory">*</span></div>
+                                       <div><input id="todate"  name="todate"  type="date" class="form-control"  required placeholder="{% trans 'TO_DATE' %}" value="{{quota.todate|date:'Y-m-d'}}" {% if is_view_user %} disabled {% endif %}></div>
+                                   </div>
+                                    <div class="col-md-3 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'ALLOTMENT_OTY' %} <span class="modalMandatory">*</span></div>
+                                       <div><input id="allotedqty" maxlength="9" min="0" name="allotedqty" type="number" required autocomplete="off"  class="form-control"  placeholder="{% trans 'ALLOTMENT_OTY' %}" value="{{quota.allotedqty}}" {% if is_view_user %} disabled {% endif %}></div>
+                                   </div>
+                                      <div class="col-md-3 mb-3">
+                                       <div class="fS14 mb-1">{% trans 'REMAINING_QTY' %} <span class="modalMandatory">*</span></div>
+                                          <div><label readonly class="form-control" id="remainingqty">0</label></div>
+                                   </div>
+
+                                    <div class="col-md-3 mb-3">
+                                       <div><input id="usedqty" name="usedqty" type="hidden" class="form-control"  placeholder="{% trans 'REMAINING_QTY' %}" value="{{quota.usedqty}}" {% if is_view_user %} disabled {% endif %}></div>
+                                   </div>
+                                </div>
+                               </div>
+
+    <div class="row mt-4 scrollContainer card-body position-relative grid-container">
+      <table class="table table-hover ">
+      <thead>
+        <tr>
+          <th scope="col">{% trans 'DISTRICT' %}</th>
+            <th scope="col">{% trans 'ALLOTTED' %} </th>
+
+            <th scope="col">{% trans 'USED' %}</th>
+            <th scope="col">{% trans 'BALANCE' %}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% if districtquotas %}
+
+      {% for districtquota in districtquotas %}
+        <tr>
+            <td>{% ifequal LANGUAGE_CODE 'ta'  %}{{ districtquota.districtnamelocal }}{% else %}{{ districtquota.districtname }}{% endifequal %}</td>
+            <td style="width:10%"><input type="hidden" name="districtid" value="{{districtquota.id}}"/>
+                <input type="number" min="0" maxlength="10" class="form-control" placeholder="{% trans 'ALLOTTED' %}" name="districtallotedqty" value="{{ districtquota.allotedqty }}" {% if is_view_user %} disabled {% endif %}/>
+            </td>
+            <td>{{ districtquota.usedqty }}</td>
+            <td>{{ districtquota.balanceqty }}</td>
+
+        </tr>
+      {% endfor %}
+      {% endif %}
+      </tbody>
+    </table>
+
+            <div class="row mt-2">
+                <div class="mb-3 d-flex justify-content-end">
+                    <button type="button" class="btn btn-site-secondary me-4 popup-close" onclick="location.href='{% url 'scheme.manage_mgallotement' %}'">{% trans 'CLOSE' %}</button>
+                    {% if not is_view_user %}
+                    <button type="button" class="btn btn-site-primary" onclick="submitMgQuota()">{% trans 'SAVE' %}</button>
+                    {% endif %}
+                </div>
+            </div>
+                 </div>
+
+                   </div>
+             </form>
+          </div>
+        </div>
+</div>
+     </div>
+</main>
+{% endblock %}
+
+{% block pagescripts %}
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $("[name='districtallotedqty']").on('keyup',function(){
+             calcRemainingQty();
+        });
+        $("[id='allotedqty']").on('keyup',function(){
+             calcRemainingQty();
+        });
+    });
+    function calcRemainingQty(){
+            var districtquotas=$("[name='districtallotedqty']");
+            var totalQty=Number($('#allotedqty').val());
+
+            var distTotalQty=0;
+            for(i=0;i<districtquotas.length;i++){
+                distTotalQty=distTotalQty+Number($(districtquotas[i]).val());
+            }
+            $('#remainingqty').text(totalQty-distTotalQty);
+    }
+    function submitMgQuota(){
+        const quotaName  = document.getElementById('quotadescription').value;
+        if (!quotaName) {
+                showAlert("Quota Name Required",'I',false);
+                return;
+        }
+        const Mgtype  = document.getElementById('mgtype').value;
+        if (!Mgtype) {
+                showAlert("MG Type Required",'I',false);
+                return;
+        }
+        const dateInput = document.getElementById('fromdate').value;
+        if (!dateInput){
+                showAlert("From Date Required",'I',false);
+                return;
+        }
+        const dateToInput  = document.getElementById('todate').value;
+        if (!dateToInput){
+                showAlert("To Date Required",'I',false);
+                return;
+        }
+        var districtquotas=$("[name='districtallotedqty']");
+        var totalQty=Number($('#allotedqty').val());
+        var distTotalQty=0;
+        if(totalQty==0) {
+            showAlert("Alloted qty should not be zero or empty",'W',false);
+            return;
+        }
+        for(i=0;i<districtquotas.length;i++){
+            /*if (Number($(districtquotas[i]).val())==0){
+                showAlert("District Quota should not be zero or empty",'W',false);
+                return;
+            }else{*/
+                distTotalQty=distTotalQty+Number($(districtquotas[i]).val());
+            /*}*/
+        }
+
+        if(totalQty!=distTotalQty) {
+                showAlert("Total district quota should be equal to total alloted qty",'W',false);
+                return;
+        }
+        $('#create-mgquota-form').submit();
+    }
+
+     var ValidationRules = function () {
+    var district_form_validate = function () {
+       if($("#create-mgquota-form").length){
+            $("#create-mgquota-form").validate({
+            ignore: ":hidden",
+            rules: {},
+            messages : {},
+            errorPlacement: function (error, element) {
+                    error.insertAfter(element.closest('div'));
+            },
+                //display error alert on form submit
+            invalidHandler: function(event, validator) {
+                return false;
+            },
+            submitHandler: function (form) {
+                    var data = new FormData(form);
+                    $.ajax({
+                        url: form.action,
+                        type: form.method,
+                        data: data,
+                        processData: false,
+                        contentType:false,
+                        success: function(response) {
+                            if(response.message.type=="alert-success"){
+                                showAlert(response.message.text,'S','/scheme/manage_mgallotement/');
+                            }
+                            else{
+                                showAlert(response.message.text,'D',false);
+                            }
+                        }
+                    });
+                }
+          });
+       }
+     }
+    return {
+        init: function() {
+            district_form_validate();
+        }
+    };
+}();
+
+function quotaToDate(input){
+    var fromdate = $(input).val();
+    if (fromdate){
+        $('#todate').attr('min', fromdate);
+    }
+}
+
+
+$(document).ready(function(e) {
+  if($( "#create-mgquota-form" ).length){
+          ValidationRules.init();
+  }
+
+<!--    var today = new Date().toISOString().split('T')[0];-->
+<!--    if($("#fromdate").length>0){-->
+<!--    document.getElementsByName("fromdate")[0].setAttribute('max', today);-->
+<!--    }-->
+<!--    if($("#todate").length>0){-->
+<!--    document.getElementsByName("todate")[0].setAttribute('max', today);-->
+<!--    }-->
+
+});
+</script>
+{% endblock pagescripts %}

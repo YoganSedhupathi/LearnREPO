@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load pagination %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+<main id="main" class="main" xmlns="http://www.w3.org/1999/html">
+     <div class="container-fluid">
+        <div class="row">
+           <div class="col-md-12">
+               <div class="card border-0 shadow">
+                    <div class="card-header bg-white page-title">
+                        <a onclick="history.back()" href="{% url 'scheme.manage_scheme' %}" class="back-btn"><i class="bi bi-arrow-left-short"></i></a>
+                        <img src="{% static 'assets/img/vuesax-bulk-profile-2user.svg' %}" class="img-fluid me-2" />
+                             {% if is_view_mode == "2" %}
+                                {% trans 'VIEW_SCHEME' %}
+                            {% elif is_view_mode == "1" %}
+                                {% trans 'EDIT_SCHEME' %}
+                            {% else %}
+                                {% trans 'CREATE_SCHEME' %}
+                            {% endif %}
+                    </div>
+                    <div class="card-body bg-white fs-6">
+                         <div class="containerBorderBox mb-1">
+                        <form class="m-form" method="POST" id='manage_scheme_form' action="" enctype="multipart/form-data" onsubmit="return false">{% csrf_token %}
+                            <input type="hidden" name="schemeid" id="schemeid" value="0">
+                            <input type="hidden" name="mode" id="mode" value="ADD">
+                            <div class="position-relative">
+                                 <h6 class="form-title">{% trans 'SCHEME_DETAILS' %}</h6>
+                                 <div class="containerBorderHead1"></div>
+                            </div>
+                            <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="schemename">Scheme Name <span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.schemename }}</label>
+                                            {% else %}
+                                            <input type="text" class="form-control rounded-0" name="schemename" id="schemename" placeholder="Enter Your Scheme Name" required
+                                            {% if schemedata %} value="{{schemedata.schemename}}" {% else %} value="" {% endif %}/>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="schemenamelocal">திட்டத்தின் பெயர் <span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.schemenamelocal }}</label>
+                                            {% else %}
+                                            <input type="text" class="form-control rounded-0" name="schemenamelocal" id="schemenamelocal" placeholder="திட்டத்தின் பெயர்" required
+                                                    {% if schemedata %} value="{{schemedata.schemenamelocal}}" {% else %} value="" {% endif %} />
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="schemegist">Scheme Gist<span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.schemegist }}</label>
+                                            {% else %}
+                                            <textarea class="form-control rounded-0" name="schemegist" id="schemegist" required placeholder="Enter Scheme Gist">{% if schemedata %}{{schemedata.schemegist}}{% endif %}</textarea>
+                                             {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="schemegistlocal">திட்டத்தின் சுருக்கம்<span class="modalMandatory">*</span></label>
+                                             {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.schemegistlocal }}</label>
+                                             {% else %}
+                                            <textarea class="form-control rounded-0" name="schemegistlocal" id="schemegistlocal" required placeholder="திட்டத்தின் சுருக்கம்" >{% if schemedata %}{{schemedata.schemegistlocal}}{% endif %}</textarea>
+                                             {% endif %}
+                                        </div>
+                                    </div>
+                            </div>
+
+                            <div class="position-relative mt-3">
+                                <h6 class="form-title">{% trans 'ELIGIBILITY_DTLS' %}</h6>
+                                <div class="containerBorderHead1"></div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6 mb-3">
+                                    <div class="mb-3">
+                                        <label class="form-label" >{% trans 'SCHEME_CATEGORY' %}<span class="modalMandatory">*</span></label>
+                                         {% if is_view_mode == "2" %}
+                                        <label class="form-control-plaintext fs-6 fw-bold">{% ifequal LANGUAGE_CODE 'ta' %} {{ schemedata.schemecategory.schemecategorylocal }} {% else %} {{ schemedata.schemecategory.schemecategoryname }} {% endifequal %}</label>
+                                         {% else %}
+                                        <select class="form-select rounded-0" id="category"
+                                                        name="category" required>
+                                                        <option name="select" value="">-{% trans 'SELECT_SCHEME_CAT' %}-</option>
+                                                        {% for cat in categories %}
+                                                            <option value="{{cat.id}}" {% if cat.id == schemedata.schemecategory_id %}selected{% endif %}>{% ifequal LANGUAGE_CODE 'ta' %} {{ cat.schemecategorylocal }} {% else %} {{ cat.schemecategoryname }} {% endifequal %}</option>
+                                                        {% endfor %}
+                                          </select>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                   <div class="mb-3">
+                                        <label class="form-label" for="renewalperiod">{% trans 'RENEWAL_PERIOD' %} <span class="modalMandatory">*</span></label>
+                                        {% if is_view_mode == "2" %}
+                                            {% if "1" == schemedata.renewalperiod %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">{% trans 'ONE_TIME' %}</label>
+                                            {% elif "2" == schemedata.renewalperiod %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">{% trans 'MONTHLY' %}</label>
+                                            {% elif "3" == schemedata.renewalperiod %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">{% trans 'YEARLY' %}</label>
+                                            {% elif "4" == schemedata.renewalperiod %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">2 {% trans 'YEARS_ONE' %}</label>
+                                            {% elif "5" == schemedata.renewalperiod %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">3 {% trans 'YEARS_ONE' %}</label>
+                                            {% endif %}
+                                        {% else %}
+                                             <select class="form-select rounded-0" id="renewalperiod"
+                                                name="renewalperiod" required >
+                                                <option name="select" value="">-{% trans 'SELECT' %}-</option>
+                                                <option value="1"  {% if "1" == schemedata.renewalperiod %}selected{% endif %}>{% trans 'ONE_TIME' %}</option>
+                                                <option value="2" {% if "2" == schemedata.renewalperiod %}selected{% endif %}>{% trans 'MONTHLY' %}</option>
+                                                <option value="3" {% if "3" == schemedata.renewalperiod %}selected{% endif %}>{% trans 'YEARLY' %}</option>
+                                                <option value="4" {% if "4" == schemedata.renewalperiod %}selected{% endif %}>2 {% trans 'YEARS_ONE' %}</option>
+                                                <option value="5" {% if "5" == schemedata.renewalperiod %}selected{% endif %}>3 {% trans 'YEARS_ONE' %}</option>
+                                             </select>
+                                        {% endif %}
+                                   </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="mb-3">
+                                            <label class="form-label" >{% trans 'AGE_LIMIT' %} <span class="modalMandatory">*</span></label>
+                                            <div class="input-group mb-3">
+                                                 {% if is_view_mode == "2" %}
+                                                    <span class="form-control-plaintext fs-6 fw-bold">{{ schemedata.agefrom }} {% trans 'AGE_BETWEEN_TO' %}  {{ schemedata.ageto }} {% trans 'AGE' %}</span>
+                                                 {% else %}
+                                                    <span class="input-group-text">{% trans 'FROM_AGE' %}</span>
+                                                    <input type="number" maxlength="3" min="0" max="120" required class="form-control rounded-0" id="agefrom" name="agefrom" placeholder="{% trans 'FROM_AGE' %}"
+                                                    {% if schemedata %} value="{{schemedata.agefrom}}" {% else %} value="0" {% endif %} >
+                                                    <span class="input-group-text">{% trans 'TO_AGE' %}</span>
+                                                    <input type="number" maxlength="3" min="0" max="120"  class="form-control rounded-0" id="ageto" name="ageto" placeholder="{% trans 'TO_AGE' %}"
+                                                         {% if schemedata %} value="{{schemedata.ageto}}" {% else %} value="0" {% endif %}>
+                                                {% endif %}
+                                            </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="mb-3">
+                                             <label class="form-label">{% trans 'EDUCATION' %} <span class="modalMandatory">*</span></label>
+                                             {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{% ifequal LANGUAGE_CODE 'ta' %} {{ schemedata.education.educationnamelocal }} {% else %} {{ schemedata.education.educationname }} {% endifequal %}</label>
+                                                 {% else %}
+                                              <select class="form-select rounded-0" id="education"
+                                                            name="education" required>
+                                                            <option  value="">-{% trans 'SELECT' %}-</option>
+                                                            <option value="">-Any-</option>
+                                                            {% for edu in educations %}
+                                                                <option value="{{edu.id}}" {% if edu.id == schemedata.education_id %}selected{% endif %}>{% ifequal LANGUAGE_CODE 'ta' %} {{edu.educationnamelocal}} {% else %} {{edu.educationname}} {% endifequal %}</option>
+                                                            {% endfor %}
+                                              </select>
+                                             {% endif %}
+                                    </div>
+                                </div>
+
+<!--                                <div class="col-md-6">-->
+<!--                                    <div class="mb-3">-->
+<!--                                        <label class="form-label">Scheme Budget<span class="modalMandatory">*</span></label>-->
+<!--                                        <div class="input-group mb-3">-->
+<!--                                           <span class="input-group-text">Budget</span>-->
+<!--                                            {% if is_view_mode == "2" %}-->
+<!--                                                  <span class="form-control rounded-0">{{ schemedata.totalbudget }}</span>-->
+<!--                                            {% else %}-->
+<!--                                           <input type="number" required class="form-control rounded-0" name="budgetamount" id="budgetamount" placeholder="Enter Budget Amount"-->
+
+<!--                                           {% if schemedata %} value="{{schemedata.totalbudget}}" {% else %} value="" {% endif %} />-->
+<!--                                            {% endif %}-->
+<!--                                          <span class="input-group-text">For Applicant</span>-->
+<!--                                              {% if is_view_mode == "2" %}-->
+<!--                                        <span class="form-control rounded-0">{{ schemedata.personamount }}</span>-->
+<!--                                         {% else %}-->
+<!--                                           <input type="number"  class="form-control rounded-0" name="benamount" id="benamount" placeholder="Enter  Benificiary Amount"-->
+<!--                                                  {% if schemedata %} value="{{schemedata.personamount}}" {% else %} value="" {% endif %}  />-->
+<!--                                             {% endif %}-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                                 <label class="form-label">{% trans 'GENDER' %} <span class="modalMandatory">*</span></label>
+                                                  <div class="input-group mb-3">
+                                                      {% if is_view_mode == "2" %}
+                                                        <input disabled class="form-control-plaintext h6 fw-bold"
+                                                               {% if schemedata.allgender == 1 %}
+                                                                    value="{% trans 'ALL_GENDER' %}"
+                                                               {% else %}
+                                                                    value="{% if 1 == schemedata.applicableformale %}{% trans 'MALE' %}{% endif %}{% if 1 == schemedata.applicableforfemale %} {% trans 'FEMALE' %}{% endif %}{% if 1 == schemedata.applicablefortransgender %} {% trans 'TRANSGENDER' %}{% endif %}"
+                                                               {% endif %} />
+                                                      {% else %}
+                                                             <span class="input-group-text">{% trans 'ALL_GENDER' %}</span>
+                                                             <div class="input-group-text">
+                                                                    <input class="mt-0" type="checkbox" value=""
+                                                                   style="width: 20px !important;height: 20px !important;"
+                                                                   aria-label="Checkbox for following text input" name="allgender" id="allgender"  {% if schemedata.allgender == 1 %}checked{% endif %}>
+                                                               </div>
+                                                               <select class="form-select rounded-0" id="gender" multiple required
+                                                                            name="gender"   {% if schemedata.allgender == 1 %} disabled {% endif %}  >
+                                                                            <option name="select" value="">-{% trans 'SELECT' %}-</option>
+                                                                            {% for gen in genders %}
+                                                                                <option value="{{gen.id}}" {% if 1 == gen.id and schemedata.applicableformale %}selected{% elif 2 == gen.id and schemedata.applicableforfemale %}selected{% elif 3 == gen.id and schemedata.applicablefortransgender %}selected{% endif %}  >{% ifequal LANGUAGE_CODE 'ta' %} {{gen.gendernamelocal}} {% else %} {{gen.gendername}} {% endifequal %}</option>
+                                                                            {% endfor %}
+                                                              </select>
+                                                      {% endif %}
+                                              </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="mb-3">
+                                         <label class="form-label">{% trans 'INSTITUTION_TYPE' %}<span class="modalMandatory">*</span></label>
+                                         {% if is_view_mode == "2" %}
+                                                {% if 0 == schemedata.institutiontype %}
+                                                 <label class="form-control-plaintext fs-6 fw-bold">{% trans 'ANY' %}</label>
+                                                {% elif 1 == schemedata.institutiontype %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">{% trans 'NGO' %}</label>
+                                                    {% elif 2 == schemedata.institutiontype %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">{% trans 'GOVT' %}</label>
+                                                {% endif %}
+                                        {% else %}
+                                           <select class="form-select rounded-0" id="instititiontype"
+                                                        name="instititiontype" required>
+                                                        <option name="select" value="">-{% trans 'SELECT' %}-</option>
+                                                        <option value="0" {% if 0 == schemedata.institutiontype %}selected{% endif %} >{% trans 'ANY' %}</option>
+                                                        <option value="1" {% if 1 == schemedata.institutiontype %}selected{% endif %}>{% trans 'NGO' %}</option>
+                                                        <option value="2" {% if 2 == schemedata.institutiontype %}selected{% endif %}>{% trans 'GOVT' %}</option>
+                                          </select>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="mb-3">
+                                             <label class="form-label">{% trans 'INSTITUTION_CAT' %} <span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                                    {% if 0 == schemedata.institutioncat %}
+                                                     <label class="form-control-plaintext fs-6 fw-bold">{% trans 'ANY' %}</label>
+                                                    {% elif 1 == schemedata.institutioncat %}
+                                                    <label class="form-control-plaintext fs-6 fw-bold">{% trans 'SCHOOLS' %}</label>
+                                                        {% elif 2 == schemedata.institutioncat %}
+                                                    <label class="form-control-plaintext fs-6 fw-bold">{% trans 'HOMES' %}</label>
+                                                    {% endif %}
+                                            {% else %}
+                                               <select class="form-select rounded-0" id="institutioncat"
+                                                            name="institutioncat" required>
+                                                            <option name="select" value="">-{% trans 'SELECT' %}-</option>
+                                                            <option value="0" {% if 0 == schemedata.institutioncat %}selected{% endif %}>{% trans 'ANY' %}</option>
+                                                            <option value="1" {% if 1 == schemedata.institutioncat %}selected{% endif %}>{% trans 'SCHOOLS' %}</option>
+                                                            <option value="2" {% if 2 == schemedata.institutioncat %}selected{% endif %}>{% trans 'HOMES' %}</option>
+                                              </select>
+                                              {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mt-3">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="eligibledistrict">{% trans 'APPLICABLE_DISTRICT' %}<span class="modalMandatory">*</span></label>
+									          <div class="input-group mb-3">
+                                                  {% if is_view_mode == "2" %}
+                                                    <label class="h6 fw-bold">
+                                                        {% if schemedata.alldistrict == 1 %}
+                                                            {% trans 'ALL_DISTRICT' %}
+                                                        {% else %}
+                                                            {% for sd in schemedistrict %}
+                                                                {% ifequal LANGUAGE_CODE 'ta' %} {{sd.district.districtnamelocal}} {% else %} {{sd.district.districtname}} {% endifequal %}&nbsp;
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </label>
+                                                  {% else %}
+                                                        <span class="input-group-text">{% trans 'ALL_DISTRICT' %}</span>
+                                                      <div class="input-group-text">
+                                                          <input class="mt-0" type="checkbox" value=""
+                                                           style="width: 20px !important;height: 20px !important;"
+                                                           aria-label="Checkbox for following text input" name="alldistricts" id="alldistricts" {% if schemedata.alldistrict == 1 %}checked{% endif %}>
+                                                      </div>
+                                                       <select class="form-select rounded-0" id="eligibledistrict" multiple required
+                                                        name="eligibledistrict" {% if schemedata.alldistrict == 1 %}disabled{% endif %} >
+                                                            <option name="select" value="">-{% trans 'SELECT' %}-</option>
+                                                            {% for dis in districts %}
+                                                                <option value="{{dis.id}} " {% if dis.selected == 1 %}selected{% endif%}  >{% ifequal LANGUAGE_CODE 'ta' %} {{dis.districtnamelocal}} {% else %} {{dis.districtname}} {% endifequal %}</option>
+                                                            {% endfor %}
+                                                         </select>
+                                                  {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                        <div class="mb-3">
+                                          <label class="form-label" for="eligiblecertificate">{% trans 'CERTIFICATE_REQUIRED' %} <span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                                <label class="form-control-plaintext fs-6 fw-bold">
+                                                    {% for sc in schemecertificate %}
+                                                                {% ifequal LANGUAGE_CODE 'ta' %} {{sc.certificatetype.certificatetypelocal}} {% else %} {{sc.certificatetype.certificatetypename}} {% endifequal %}&nbsp;
+                                                    {% endfor %}
+                                                </label>
+                                            {% else %}
+                                                  <select class="form-select rounded-0" id="eligiblecertificate" multiple required
+                                                        name="eligiblecertificate" >
+                                                        <option name="select" value="">-{% trans 'ALL_CERTIFICATES' %}-</option>
+                                                        {% for cer in certificates %}
+                                                            <option value="{{cer.id}}" {% if cer.selected == 1 %}selected{% endif%} >{% ifequal LANGUAGE_CODE 'ta' %} {{cer.certificatetypelocal}} {% else %} {{cer.certificatetypename}} {% endifequal %}</option>
+                                                        {% endfor %}
+                                                  </select>
+                                            {% endif %}
+                                        </div>
+                                </div>
+                                <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="eligiblecriteria">Eligible Criteria <span class="modalMandatory">*</span></label>
+                                             {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.eligiblecriteria }}</label>
+                                            {% else %}
+                                            <textarea class="form-control rounded-0" name="eligiblecriteria" id="eligiblecriteria" required placeholder="Enter Eligible Criteria" >{% if schemedata %}{{schemedata.eligiblecriteria}}{% endif %}</textarea>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="eligiblecriterialocal">தகுதியான அளவுகோல்கள் <span class="modalMandatory">*</span></label>
+                                             {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.eligiblecriterialocal }}</label>
+                                            {% else %}
+                                            <textarea class="form-control rounded-0" name="eligiblecriterialocal" id="eligiblecriterialocal" required placeholder="தகுதியான அளவுகோல்கள்" >{% if schemedata %}{{schemedata.eligiblecriterialocal}}{% endif %}</textarea>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                            </div>
+
+
+                             <div class="row mt-3">
+                                 <div class="col-12">
+                                        <h6 class="form-title">{% trans 'DISABILITY_DETAIL' %}</h6>
+                                       <div class="containerBorderHead1"></div>
+                                    </div>
+                                    <div class="row col-md-12 mt-3 mb-3">
+                                        <label class="form-label" >{% trans 'APPLICABLE_DISABILITY' %} <span class="modalMandatory">*</span></label>
+                                   {% if  is_view_mode == "2" %}
+                                            {% for disa in schemedisability %}
+                                                <label class="col-md-3 h6 fw-bold">
+                                                    {% ifequal LANGUAGE_CODE 'ta' %} {{disa.disabilitytype.disablitynamelocal}} {% else %} {{disa.disabilitytype.disablityname}} {% endifequal %}&nbsp;-&nbsp;{{disa.disabilitypercent}}&nbsp;%
+                                                </label>
+                                            {% endfor %}
+                                   {% else %}
+                                      {% if disablitytype %}
+                                        {% for disa in disablitytype %}
+                                             <div class="col-md-4">
+                                                    <div class="service-type-box multilple-select {% if disa.selected == 1 %}active{% endif %}">
+                                                        <div class="input-group">
+                                                            <input type="checkbox" class="form-check-input"  style="width:10% !important;" value="{{disa.id}}" name="seldisablity" id="seldisablity{{disa.id}}" disabilityname="{{disa.disablityname}}" {% if disa.selected == 1 %}checked{% endif %}/>
+                                                            <label class="form-label" style="width:60% !important" for="disabilitypercent{{disa.id}}">{% ifequal LANGUAGE_CODE 'ta' %} {{disa.disablitynamelocal}} {% else %} {{disa.disablityname}} {% endifequal %}</label>
+                                                            <input type="number" min="0" max="100"  maxlength="3" name="disabilitypercent" id="disabilitypercent{{disa.id}}" class="form-control rounded-0"
+                                                            value="{{disa.disabilitypercent}}">
+                                                            <input type="hidden" name="selecteddisability" id="selecteddisability" value="{{disa.id}}" >
+                                                        </div>
+                                                    </div>
+                                            </div>
+                                        {% endfor %}
+                                      {% endif %}
+                                  {% endif %}
+                                 </div>
+                             </div><br>
+
+                            <div class="position-relative">
+                                <h6 class="form-title">{% trans 'CONTACT_DETAILS' %}</h6>
+                                 <div class="containerBorderHead1"></div>
+                            </div>
+                            <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="applicationformavailable">{% trans 'APP_FORM_AVAILABLE' %}<span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                                {% if 0 == schemedata.applicationformavailable %}
+                                                     <label class="form-control-plaintext fs-6 fw-bold"> {% trans 'NO' %} </label>
+                                                {% elif 1 == schemedata.applicationformavailable %}
+                                                     <label class="form-control-plaintext fs-6 fw-bold">{% trans 'YES' %}</label>
+                                                {% endif %}
+                                            {% else %}
+                                            <select class="form-select rounded-0" name="applicationformavailable" id="applicationformavailable">
+                                                <option value="0" {% if 0 == schemedata.applicationformavailable %}selected{% endif %}>{% trans 'NO' %}</option>
+                                                <option value="1" {% if 1 == schemedata.applicationformavailable %}selected{% endif %}>{% trans 'YES' %}</option>
+                                            </select>
+                                             {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="submittedformperson">{% trans 'SUBMIT_APP_FORM_TO' %}<span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.submittedformperson }}</label>
+                                            {% else %}
+                                            <input type="text" class="form-control rounded-0" name="submittedformperson" id="submittedformperson" required placeholder="{% trans 'SUBMIT_APP_FORM_TO' %}" {% if schemedata %} value="{{schemedata.submittedformperson}}" {% else %} value="" {% endif %} />
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="officer_to_address">{% trans 'OFFICER_TO_GRIEVANCES' %}<span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.officertoaddress }}</label>
+                                            {% else %}
+                                            <textarea class="form-control rounded-0" name="officer_to_address" id="officer_to_address" placeholder="{% trans 'ADDRESS' %}" required>{% if schemedata %}{{schemedata.officertoaddress}}{% endif %}</textarea>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                  <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="officephoneno">{% trans 'GRIEVANCES_OFFICER_CONTACT_NO' %} <span class="modalMandatory">*</span></label>
+                                            {% if is_view_mode == "2" %}
+                                            <label class="form-control-plaintext fs-6 fw-bold">{{ schemedata.officephoneno }}</label>
+                                            {% else %}
+                                            <input type="text" class="form-control rounded-0"  name="officephoneno" maxlength="10" id="officephoneno" placeholder="{% trans 'PHONE' %}" required onkeypress="return ValidateNum(event);"
+                                                   {% if schemedata %} value="{{schemedata.officephoneno}}" {% else %} value="" {% endif %}/>
+                                             {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            <div class="row mt-2">
+                                <div class="mb-3 d-flex justify-content-end">
+                                <button type="button" onclick="location.href='{% url 'scheme.manage_scheme' %}'" class="btn btn-site-secondary me-4 popup-close">{% trans 'CANCEL' %}</button>
+                                {% if is_view_mode != "2" %}
+                                    <button type="button" onclick="SaveScheme()" class="btn btn-site-primary">{% trans 'SAVE' %}</button>
+                                {% endif %}
+                            </div>
+                            </div>
+                        </form>
+                         </div>
+                    </div>
+               </div>
+           </div>
+        </div>
+    </div>
+ </main>
+{% endblock %}
+
+{% block pagescripts %}
+      <script src="{% static 'js/scheme/scheme.js' %}"></script>
+{% endblock pagescripts %}

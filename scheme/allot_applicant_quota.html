@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load common_template_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block content %}
+<style>
+    #constituencylocal{
+      pointer-events: none;
+      touch-action: none;
+    }
+</style>
+ <main id="main" class="main">
+     <div class="container-fluid">
+        <div class="row">
+           <div class="col-md-12">
+               <div class="card border-0 shadow">
+                   <div class="card-header bg-white page-title">
+                      <img src="{% static 'assets/img/vuesax-bulk-user-octagon.svg' %}" class="img-fluid me-2" />
+                                <div class="row">
+                                   <h2 style="font-size:25px">{% if is_view_user %}{% trans 'VIEW_MG' %} {% elif user_data %} {% trans 'EDIT_MG' %} {% else %}{% trans 'UPDATE_MG' %} {% endif %}</h2>
+                                    <div class="col-md-12">
+                                      <div class="float-start fS12 topTitleColor breadCrumbHighLight cursorPointer" onclick="location.href='{% url 'scheme.view_scheme_beneficiary' schemeid|encrypt %}'"> {% trans 'SCHEME_APPLICANT_LIST' %}</div> <div class="float-start fS8 topTitleColor px-2 pt-1"><span class="bi bi-caret-right-fill" style='font-size:10px'></span></div>
+                                      <div class="fS12 topTitleColor float-start me-2">{% if is_view_user %}{% trans 'VIEW_MG' %} {% elif user_data %} {% trans 'EDIT_MG' %} {% else %}{% trans 'UPDATE_MG' %} {% endif %}</div>
+                                   </div>
+                                </div>
+                         </div>
+                   <div class="card-body position-relative">
+                               <form class="m-form" method="POST" id='manage_applicantquotaallot_form' action="" enctype="multipart/form-data">{% csrf_token %}
+                                 <input type="hidden" id="schemeid" name="schemeid" value="{{ schemeid }}">
+                                 <div class="">
+                                    <div class="row">
+                                       <div class="col-md-12">
+                                           <div class="containerBorderBox mb-1">
+                                               <div class="col-md-12">
+                                                    <div class="row mt-4">
+                                                            <div class="col-md-3 mb-3">
+                                                               <div class="fS14 mb-1">{% trans 'QUOTA_ALLOTTED' %}<span class="modalMandatory"></span></div>
+                                                                {% if is_view_user %}
+                                                                    <label><strong></strong></label>
+                                                               {% else %}
+                                                               <div>
+                                                                   <label class="custom-toggle">
+                                                                     <input id="is_quotaallotted" name="is_quotaallotted" type="checkbox" value="1" {% if quotastatus == True  %} checked {% endif %}>
+                                                                     <span class="custom-toggle-slider rounded-circle" data-label-off="{% trans 'NO' %}" data-label-on="{% trans 'Allotted' %}" ></span>
+                                                                  </label>
+                                                               </div>
+                                                               {% endif %}
+                                                           </div>
+                                                   </div>
+                                               </div>
+                                           </div>
+                                       </div>
+                                    </div>
+                                </div>
+                                   <div class="row mt-2">
+                                        <div class="mb-3 d-flex justify-content-end">
+                                            <button type="button" class="btn btn-site-secondary me-4 popup-close"  onclick="location.href='{% url 'scheme.view_scheme_beneficiary' schemeid|encrypt %}'">{% trans 'CLOSE' %}</button>
+                                            {% if not is_view_user %}
+
+                                            <button type="button" onclick="showConfirmDlg()" class="btn btn-site-primary">{% trans 'SAVE ' %}</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                               </form>
+                    </div>
+               </div>
+           </div>
+        </div>
+    </div>
+ </main>
+<div class="modal" id="showConfirmDlg" tabindex="-3" >
+  <div class="modal-dialog modal-dialog-msg modal-xl">
+    <div class="modal-content modal-content-msg modalRadius modalBorderNone">
+      <div class="modal-header modalTitleBg" >
+        <h5 class="modal-title modalTitleFS">{% trans 'CONFIRM' %}</h5>
+      </div>
+      <div class="modal-body modal-body-msg py-3">
+          <div class="fS14 text-center mt-4 mb-2">{% trans 'APPLICANT_CONFIRM_DLG' %}</div>
+      </div>
+      <div class="modal-footer text-center p-0 m-0" style="display:block; margin: 0;">
+        <div class="row g-0" style="margin:0;">
+            <div class="col-md-6">
+                <div class="modalLftBut text-dark" data-dismiss="modal" onclick="cancelApplicant()">
+                    {% trans 'NO' %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="modalRhtBut bg-success text-white" onclick="Savequotaallot();">
+                   {% trans 'YES' %}
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block pagescripts %}
+<script>
+
+ function showConfirmDlg(){
+        $("#showConfirmDlg").modal('show');
+    }
+function cancelApplicant(){
+        window.location.reload();
+    }
+
+
+var MgValidationRules = function () {
+    var mg_form_validate = function () {
+       if($("#manage_applicantquotaallot_form").length){
+             $("#manage_applicantquotaallot_form").validate({
+                    rules: {
+                      is_quotaallotted : {
+                        required: true,
+                      },
+
+                    },
+
+                     errorPlacement: function (error, element) {
+                    error.insertAfter(element.closest('div'));
+            },
+                //display error alert on form submit
+            invalidHandler: function(event, validator) {
+                return false;
+            },
+            submitHandler: function (form) {
+                    var data = new FormData(form);
+                    $.ajax({
+                        url: form.action,
+                        type: form.method,
+                        data: data,
+                        processData: false,
+                        contentType:false,
+                        success: function(response) {
+                        alert(response.message.text);
+                        alert(response.message.type);
+                            if(response.message.type=="alert-success"){
+                                  showAlert(response.message.text,'S','/scheme/view_scheme_beneficiary/'+response.message.schemeid);
+                            }
+                            else{
+                                showAlert(response.message.text,'D',false);
+                            }
+                        }
+                    });
+                }
+           });
+       }
+     }
+        return {
+            init: function() {
+                mg_form_validate();
+            }
+        };
+}();
+
+function Savequotaallot(){
+    $("#manage_applicantquotaallot_form").submit();
+}
+
+$(document).ready(function(e) {
+  if($( "#manage_applicantquotaallot_form" ).length){
+          MgValidationRules.init();
+  }
+  });
+
+</script>
+{% endblock pagescripts %}
